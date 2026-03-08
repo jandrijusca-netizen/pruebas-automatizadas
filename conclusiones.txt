@@ -1,0 +1,165 @@
+================================================================
+  CONCLUSIONES Y HALLAZGOS DEL EJERCICIO
+  E2E: Demoblaze | API: PetStore
+  Autor: Jandri Jessi Justo Carazas-Analista QA
+================================================================
+
+RESUMEN EJECUTIVO
+-----------------
+Se desarrollaron dos suites de pruebas automatizadas:
+  1. Prueba E2E sobre el flujo de compra de Demoblaze
+     utilizando Selenium WebDriver con Python.
+  2. Pruebas de API REST sobre PetStore (Swagger) 
+     utilizando la librería requests de Python.
+
+================================================================
+AUTOMATIZACIÓN E2E - DEMOBLAZE
+================================================================
+
+HALLAZGOS GENERALES
+-------------------
+1. La página https://www.demoblaze.com/ carga contenido de forma
+   dinámica mediante AJAX, lo que requiere tiempos de espera
+   explícitos (WebDriverWait) para evitar errores de sincronización.
+
+2. Al agregar un producto al carrito, la aplicación muestra una
+   alerta nativa del navegador (alert) con el mensaje
+   "Product added." — esto se captura y valida correctamente.
+
+3. El flujo de "Place Order" abre un modal con formulario donde
+   se deben ingresar: nombre, país, ciudad, tarjeta, mes y año.
+   Todos los campos son de texto libre sin validación en el cliente.
+
+4. La confirmación de compra muestra el mensaje
+   "Thank you for your purchase!" en un cuadro SweetAlert,
+   lo que se utiliza como criterio de éxito de la prueba.
+
+CASOS DE PRUEBA EJECUTADOS
+---------------------------
+  TEST 01 | Agregar primer producto (Samsung galaxy s6)
+           Resultado esperado : Alerta "Product added."
+           Variables entrada  : Nombre del producto
+           Variables salida   : Texto de alerta, estado del carrito
+
+  TEST 02 | Agregar segundo producto (Nokia lumia 1520)
+           Resultado esperado : Alerta "Product added."
+           Variables entrada  : Categoría "Phones", nombre del producto
+           Variables salida   : Texto de alerta
+
+  TEST 03 | Visualizar el carrito
+           Resultado esperado : Al menos 1 producto en la tabla del carrito
+           Variables entrada  : Navegación a /cart.html
+           Variables salida   : Número de filas en tbody, total ($)
+
+  TEST 04 | Completar compra y verificar confirmación
+           Resultado esperado : Mensaje "Thank you for your purchase!"
+           Variables entrada  : name, country, city, card, month, year
+           Variables salida   : Texto del modal de confirmación,
+                                detalles del pedido (ID, monto, fecha)
+
+OBSERVACIONES TÉCNICAS E2E
+---------------------------
+- Los tiempos de carga del sitio son variables (dependen de la red),
+  por lo que se recomienda un implicit wait mínimo de 10 segundos.
+- El carrito persiste entre sesiones usando localStorage, lo que
+  puede causar interferencia si se ejecutan pruebas en paralelo.
+- El selector de productos puede variar si el catálogo cambia de
+  orden; se recomienda usar XPath con el nombre del producto.
+
+================================================================
+PRUEBAS DE API - PETSTORE
+================================================================
+
+HALLAZGOS GENERALES
+-------------------
+1. La API de PetStore (https://petstore.swagger.io/v2) es una API
+   pública de demostración. Los datos no son persistentes entre
+   sesiones largas, pero se mantienen durante una prueba continua.
+
+2. Todos los endpoints principales respondieron con HTTP 200 OK
+   durante las pruebas, con tiempos de respuesta promedio de
+   300-800 ms.
+
+3. La API acepta IDs numéricos; se utiliza un ID aleatorio para
+   evitar colisiones con datos pre-existentes en el servidor
+   compartido.
+
+4. El endpoint GET /pet/findByStatus puede devolver una lista
+   muy grande de mascotas cuando el estatus es "sold", ya que
+   muchos usuarios usan esta API pública simultáneamente.
+
+CASOS DE PRUEBA EJECUTADOS
+---------------------------
+  TEST 01 | POST /pet - Agregar mascota
+           Entrada  : JSON con id, name="Firulais", status="available",
+                      category, photoUrls, tags
+           Salida   : JSON con objeto mascota creado
+           Validación: status_code=200, id correcto, name="Firulais"
+
+  TEST 02 | GET /pet/{petId} - Consultar por ID
+           Entrada  : petId (entero aleatorio generado en TEST 01)
+           Salida   : JSON con objeto mascota
+           Validación: status_code=200, id y nombre coinciden
+
+  TEST 03 | PUT /pet - Actualizar nombre y estatus
+           Entrada  : JSON completo con name="Firulais Actualizado",
+                      status="sold"
+           Salida   : JSON con objeto mascota actualizado
+           Validación: status_code=200, name y status actualizados
+
+  TEST 04 | GET /pet/findByStatus - Consultar por estatus
+           Entrada  : query param status="sold"
+           Salida   : Array JSON de mascotas con estatus "sold"
+           Validación: status_code=200, lista no vacía,
+                       todos los ítems tienen status="sold"
+
+OBSERVACIONES TÉCNICAS API
+---------------------------
+- La API de PetStore es compartida y pública, por lo que los datos
+  pueden ser modificados por otros usuarios entre pruebas.
+- Se generan IDs aleatorios para evitar conflictos, aunque no hay
+  garantía total de unicidad en un ambiente compartido.
+- El endpoint findByStatus indexa con cierto retraso; la mascota
+  recién actualizada puede no aparecer inmediatamente en la lista.
+- No se requiere autenticación para la mayoría de los endpoints,
+  lo que facilita las pruebas pero representa un riesgo de seguridad
+  en entornos reales.
+
+================================================================
+CONCLUSIONES GENERALES
+================================================================
+
+1. SELENIUM ES ADECUADO para automatizar Demoblaze. La gestión
+   de alertas y esperas dinámicas son los puntos más delicados
+   del flujo. El Page Object Model (POM) sería recomendable para
+   proyectos más grandes.
+
+2. REQUESTS (PYTHON) es una herramienta eficiente y sencilla para
+   pruebas de API REST. Para proyectos más complejos, Karate o
+   RestAssured ofrecerían mejores capacidades de reporte.
+
+3. LA TRAZABILIDAD de entradas y salidas en cada caso de prueba
+   es fundamental para identificar defectos y comunicar resultados
+   al equipo de desarrollo.
+
+4. LOS AMBIENTES COMPARTIDOS (PetStore público, Demoblaze) pueden
+   introducir falsos negativos; se recomienda usar ambientes
+   dedicados en proyectos reales.
+
+5. LA AUTOMATIZACIÓN E2E Y DE APIs se complementan: las pruebas
+   de API validan la lógica de negocio en el backend con rapidez,
+   mientras las pruebas E2E validan la experiencia del usuario
+   de extremo a extremo.
+
+================================================================
+MEJORAS FUTURAS PROPUESTAS
+================================================================
+
+- Implementar Page Object Model (POM) para el E2E
+- Agregar generación de reportes HTML con pytest-html o Allure
+- Parametrizar los datos de prueba usando archivos CSV o JSON
+- Integrar las pruebas en un pipeline CI/CD (GitHub Actions)
+- Agregar pruebas negativas: datos inválidos, campos vacíos,
+  IDs inexistentes, etc.
+
+================================================================
