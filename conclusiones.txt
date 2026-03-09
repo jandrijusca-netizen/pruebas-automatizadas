@@ -52,7 +52,7 @@ CASOS DE PRUEBA EJECUTADOS
            Variables salida   : Número de filas en tbody, total ($)
 
   TEST 04 | Completar compra y verificar confirmación
-           Resultado esperado : Mensaje "Thank you for your purchase!"
+           Resultado esperado : Mensaje "Gracias por su compra!"
            Variables entrada  : name, country, city, card, month, year
            Variables salida   : Texto del modal de confirmación,
                                 detalles del pedido (ID, monto, fecha)
